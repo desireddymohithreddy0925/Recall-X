@@ -1,0 +1,228 @@
+databaseChangeLog:
+- changeSet:
+    id: '2'
+    author: recall-x
+    changes:
+    - createTable:
+        tableName: organization
+        columns:
+        - column:
+            name: id
+            type: bigint
+            autoIncrement: true
+            constraints:
+              primaryKey: true
+              nullable: false
+        - column:
+            name: created_at
+            type: timestamp
+            defaultValueComputed: CURRENT_TIMESTAMP
+        - column:
+            name: updated_at
+            type: timestamp
+            defaultValueComputed: CURRENT_TIMESTAMP
+    - createTable:
+        tableName: user
+        columns:
+        - column:
+            name: id
+            type: bigint
+            autoIncrement: true
+            constraints:
+              primaryKey: true
+              nullable: false
+        - column:
+            name: created_at
+            type: timestamp
+            defaultValueComputed: CURRENT_TIMESTAMP
+        - column:
+            name: updated_at
+            type: timestamp
+            defaultValueComputed: CURRENT_TIMESTAMP
+    - createTable:
+        tableName: system_app
+        columns:
+        - column:
+            name: id
+            type: bigint
+            autoIncrement: true
+            constraints:
+              primaryKey: true
+              nullable: false
+        - column:
+            name: created_at
+            type: timestamp
+            defaultValueComputed: CURRENT_TIMESTAMP
+        - column:
+            name: updated_at
+            type: timestamp
+            defaultValueComputed: CURRENT_TIMESTAMP
+    - createTable:
+        tableName: incident
+        columns:
+        - column:
+            name: id
+            type: bigint
+            autoIncrement: true
+            constraints:
+              primaryKey: true
+              nullable: false
+        - column:
+            name: created_at
+            type: timestamp
+            defaultValueComputed: CURRENT_TIMESTAMP
+        - column:
+            name: updated_at
+            type: timestamp
+            defaultValueComputed: CURRENT_TIMESTAMP
+        - column:
+            name: title
+            type: varchar(255)
+            constraints:
+              nullable: false
+        - column:
+            name: description
+            type: text
+    - createTable:
+        tableName: deployment
+        columns:
+        - column:
+            name: id
+            type: bigint
+            autoIncrement: true
+            constraints:
+              primaryKey: true
+              nullable: false
+        - column:
+            name: created_at
+            type: timestamp
+            defaultValueComputed: CURRENT_TIMESTAMP
+        - column:
+            name: updated_at
+            type: timestamp
+            defaultValueComputed: CURRENT_TIMESTAMP
+    - createTable:
+        tableName: engineering_experience
+        columns:
+        - column:
+            name: id
+            type: bigint
+            autoIncrement: true
+            constraints:
+              primaryKey: true
+              nullable: false
+        - column:
+            name: created_at
+            type: timestamp
+            defaultValueComputed: CURRENT_TIMESTAMP
+        - column:
+            name: updated_at
+            type: timestamp
+            defaultValueComputed: CURRENT_TIMESTAMP
+    - createTable:
+        tableName: architecture_decision
+        columns:
+        - column:
+            name: id
+            type: bigint
+            autoIncrement: true
+            constraints:
+              primaryKey: true
+              nullable: false
+        - column:
+            name: created_at
+            type: timestamp
+            defaultValueComputed: CURRENT_TIMESTAMP
+        - column:
+            name: updated_at
+            type: timestamp
+            defaultValueComputed: CURRENT_TIMESTAMP
+    - createTable:
+        tableName: troubleshooting_attempt
+        columns:
+        - column:
+            name: id
+            type: bigint
+            autoIncrement: true
+            constraints:
+              primaryKey: true
+              nullable: false
+        - column:
+            name: created_at
+            type: timestamp
+            defaultValueComputed: CURRENT_TIMESTAMP
+        - column:
+            name: updated_at
+            type: timestamp
+            defaultValueComputed: CURRENT_TIMESTAMP
+        - column:
+            name: action_taken
+            type: text
+        - column:
+            name: status
+            type: varchar(50)
+            constraints:
+              nullable: false
+        - column:
+            name: incident_id
+            type: bigint
+    - createTable:
+        tableName: lesson
+        columns:
+        - column:
+            name: id
+            type: bigint
+            autoIncrement: true
+            constraints:
+              primaryKey: true
+              nullable: false
+        - column:
+            name: created_at
+            type: timestamp
+            defaultValueComputed: CURRENT_TIMESTAMP
+        - column:
+            name: updated_at
+            type: timestamp
+            defaultValueComputed: CURRENT_TIMESTAMP
+    - createTable:
+        tableName: preventive_action
+        columns:
+        - column:
+            name: id
+            type: bigint
+            autoIncrement: true
+            constraints:
+              primaryKey: true
+              nullable: false
+        - column:
+            name: created_at
+            type: timestamp
+            defaultValueComputed: CURRENT_TIMESTAMP
+        - column:
+            name: updated_at
+            type: timestamp
+            defaultValueComputed: CURRENT_TIMESTAMP
+    - createTable:
+        tableName: pattern
+        columns:
+        - column:
+            name: id
+            type: bigint
+            autoIncrement: true
+            constraints:
+              primaryKey: true
+              nullable: false
+        - column:
+            name: created_at
+            type: timestamp
+            defaultValueComputed: CURRENT_TIMESTAMP
+        - column:
+            name: updated_at
+            type: timestamp
+            defaultValueComputed: CURRENT_TIMESTAMP
+    - addForeignKeyConstraint:
+        baseTableName: troubleshooting_attempt
+        baseColumnNames: incident_id
+        constraintName: fk_troubleshooting_incident
+        referencedTableName: incident
+        referencedColumnNames: id

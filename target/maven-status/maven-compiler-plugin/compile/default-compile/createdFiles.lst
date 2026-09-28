@@ -1,0 +1,5 @@
+com/recallx/recallx/exception/ErrorResponse$ErrorResponseBuilder.class
+com/recallx/recallx/exception/ErrorResponse.class
+com/recallx/recallx/exception/GlobalExceptionHandler.class
+com/recallx/recallx/controller/HealthController.class
+com/recallx/recallx/RecallXApplication.class
