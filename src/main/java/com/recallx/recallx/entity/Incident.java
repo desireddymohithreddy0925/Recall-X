@@ -30,5 +30,6 @@ public class Incident {
     private String description;
 
     @OneToMany(mappedBy = "incident", cascade = CascadeType.ALL)
+    @Builder.Default
     private java.util.List<TroubleshootingAttempt> troubleshootingAttempts = new java.util.ArrayList<>();
 }

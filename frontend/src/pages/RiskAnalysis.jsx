@@ -1,19 +1,27 @@
 import React, { useState } from 'react'
-import { ShieldAlert, CheckCircle, Activity, ArrowRight, Zap } from 'lucide-react'
+import { ShieldAlert, CheckCircle, Activity, ArrowRight, Zap, ToggleLeft, ToggleRight } from 'lucide-react'
 
 export default function RiskAnalysis() {
   const [deployment, setDeployment] = useState('')
   const [analysis, setAnalysis] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [memoryEnabled, setMemoryEnabled] = useState(true)
 
   const handleAnalyze = async () => {
     setLoading(true)
-    // Simulate API call to /api/deployments/analyze
     setTimeout(() => {
-      if (deployment.toLowerCase().includes('connection pool')) {
+      if (!memoryEnabled) {
+        // Without Memory: Generic Response
+        setAnalysis({
+          status: 'NO HISTORICAL SIMILARITY',
+          warningMessage: 'Proceed with standard deployment checklist.',
+          evidence: null
+        })
+      } else if (deployment.toLowerCase().includes('connection pool')) {
+        // With Memory: Gated lookup finds ADR-7
         setAnalysis({
           status: 'MEMORY-BASED RISK DETECTED',
-          warningMessage: 'This change resembles historical changes associated with previous incidents.',
+          warningMessage: 'This change touches a setting that was chosen deliberately after an incident.',
           evidence: {
             historicalExperience: 'Connection pool change leading to database saturation',
             similarity: 'Both changes alter the maximum connection limit on the payment DB',
@@ -21,92 +29,99 @@ export default function RiskAnalysis() {
             previouslyFailed: 'Increasing the timeout without capping the pool size',
             previouslyWorked: 'Reverting the pool size and implementing circuit breakers',
             lessonLearned: 'Uncapped connection pools overwhelm the primary writer DB instance',
-            preventiveAction: 'Ensure circuit breaker is deployed alongside pool changes'
+            preventiveAction: 'Ensure circuit breaker is deployed alongside pool changes',
+            referenceId: 'ADR-7'
           }
         })
       } else {
         setAnalysis({
           status: 'NO HISTORICAL SIMILARITY',
-          warningMessage: 'No significant historical precedents found for this change.',
+          warningMessage: 'No active architectural decisions or historical incidents found for this change.',
           evidence: null
         })
       }
       setLoading(false)
-    }, 1500)
+    }, 1200)
+  }
+
+  const handleFeedback = (outcome) => {
+    alert(`Feedback submitted: ${outcome}. Agent will learn from this.`);
   }
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
-      <header className="mb-10">
-        <h2 className="text-3xl font-bold text-white mb-2">Memory-Based Risk Detection</h2>
-        <p className="text-slate-400">Analyze new deployments against historical engineering experiences before they ship.</p>
+      <header className="mb-10 flex justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold text-app-text-primary mb-2">Memory-Based Risk Detection</h2>
+          <p className="text-app-text-secondary">Analyze new deployments against historical engineering experiences.</p>
+        </div>
+        
+        {/* V2: Memory ON/OFF Toggle */}
+        <button 
+          onClick={() => setMemoryEnabled(!memoryEnabled)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-colors ${memoryEnabled ? 'bg-app-accent/20 border-app-accent text-app-accent' : 'bg-app-card border-app-border text-app-text-secondary'}`}
+        >
+          {memoryEnabled ? <ToggleRight className="w-6 h-6" /> : <ToggleLeft className="w-6 h-6" />}
+          <span className="font-medium text-sm">Hindsight Memory: {memoryEnabled ? 'ON' : 'OFF'}</span>
+        </button>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Input Section */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col">
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <Zap className="w-5 h-5 text-blue-500" /> New Deployment Configuration
+        <div className="bg-app-secondary border border-app-border rounded-xl p-6 flex flex-col">
+          <h3 className="text-lg font-semibold text-app-text-primary mb-4 flex items-center gap-2">
+            <Zap className="w-5 h-5 text-app-accent" /> New Deployment Configuration
           </h3>
           <textarea 
-            className="w-full bg-slate-950 border border-slate-700 rounded-lg p-4 text-slate-200 mb-4 flex-1 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none font-mono text-sm"
+            className="w-full bg-app-bg border border-app-border rounded-lg p-4 text-app-text-primary mb-4 flex-1 focus:border-app-accent focus:ring-1 focus:ring-app-accent outline-none resize-none font-mono text-sm"
             placeholder="e.g. Payment Service v2.9
-- connection pool changed to 500
-- retry logic updated
-- timeout changed to 30s"
+- connection pool changed to 500"
             value={deployment}
             onChange={(e) => setDeployment(e.target.value)}
           />
           <button 
             onClick={handleAnalyze}
             disabled={loading || !deployment}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full bg-app-accent text-app-bg hover:opacity-90 text-app-text-primary font-medium py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
           >
-            {loading ? 'Analyzing Historical Memory...' : 'Analyze Deployment Risk'}
+            {loading ? 'Analyzing...' : 'Analyze Risk'}
           </button>
         </div>
 
-        {/* Output Section */}
         <div className="flex flex-col">
           {!analysis && !loading && (
-            <div className="flex-1 bg-slate-900 border border-slate-800 border-dashed rounded-xl flex items-center justify-center text-slate-500">
+            <div className="flex-1 bg-app-secondary border border-app-border border-dashed rounded-xl flex items-center justify-center text-app-text-secondary">
               Awaiting deployment details...
             </div>
           )}
 
           {loading && (
-            <div className="flex-1 bg-slate-900 border border-slate-800 rounded-xl flex flex-col items-center justify-center text-blue-500">
+            <div className="flex-1 bg-app-secondary border border-app-border rounded-xl flex flex-col items-center justify-center text-app-accent">
               <Activity className="w-12 h-12 animate-pulse mb-4" />
-              <p className="font-medium animate-pulse">Querying Hindsight Memory Layer...</p>
+              <p className="font-medium animate-pulse">Querying Hindsight...</p>
             </div>
           )}
 
           {analysis && !loading && (
-            <div className={`flex-1 rounded-xl p-6 border ${analysis.status === 'MEMORY-BASED RISK DETECTED' ? 'bg-red-950/20 border-red-900/50' : 'bg-green-950/20 border-green-900/50'}`}>
-              
+            <div className={`flex-1 rounded-xl p-6 border ${analysis.status === 'MEMORY-BASED RISK DETECTED' ? 'bg-app-critical/10 border-app-critical/30' : 'bg-app-success/10 border-app-success/30'}`}>
               <div className="flex items-center gap-3 mb-6">
-                {analysis.status === 'MEMORY-BASED RISK DETECTED' ? (
-                  <ShieldAlert className="w-8 h-8 text-red-500" />
-                ) : (
-                  <CheckCircle className="w-8 h-8 text-green-500" />
-                )}
+                {analysis.status === 'MEMORY-BASED RISK DETECTED' ? <ShieldAlert className="w-8 h-8 text-app-critical" /> : <CheckCircle className="w-8 h-8 text-app-success" />}
                 <div>
-                  <h3 className={`text-xl font-bold ${analysis.status === 'MEMORY-BASED RISK DETECTED' ? 'text-red-400' : 'text-green-400'}`}>
+                  <h3 className={`text-xl font-bold ${analysis.status === 'MEMORY-BASED RISK DETECTED' ? 'text-red-400' : 'text-app-success'}`}>
                     {analysis.status}
                   </h3>
-                  <p className="text-slate-400 text-sm mt-1">{analysis.warningMessage}</p>
+                  <p className="text-app-text-secondary text-sm mt-1">{analysis.warningMessage}</p>
                 </div>
               </div>
 
               {analysis.evidence && (
                 <div className="space-y-6">
-                  <div className="bg-slate-900/80 rounded-lg p-5 border border-slate-800">
-                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Memory Lineage</h4>
+                  <div className="bg-app-secondary/80 rounded-lg p-5 border border-app-border">
+                    <h4 className="text-xs font-bold text-app-text-secondary uppercase tracking-wider mb-3">Decision Lineage: {analysis.evidence.referenceId}</h4>
                     <div className="flex items-center gap-4 text-sm">
-                      <div className="flex-1 p-3 bg-slate-800 rounded text-slate-300">
+                      <div className="flex-1 p-3 bg-app-card rounded text-app-text-primary">
                         {analysis.evidence.historicalExperience}
                       </div>
-                      <ArrowRight className="w-5 h-5 text-slate-600 shrink-0" />
+                      <ArrowRight className="w-5 h-5 text-app-text-secondary shrink-0" />
                       <div className="flex-1 p-3 bg-red-900/20 text-red-400 border border-red-900/30 rounded font-medium">
                         {analysis.evidence.previousIncident}
                       </div>
@@ -114,19 +129,23 @@ export default function RiskAnalysis() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-orange-950/20 border border-orange-900/30 rounded-lg p-4">
-                      <h4 className="text-xs font-bold text-orange-500 uppercase tracking-wider mb-2">What Failed</h4>
-                      <p className="text-sm text-slate-300">{analysis.evidence.previouslyFailed}</p>
+                    <div className="bg-app-warning/10 border border-app-warning/30 rounded-lg p-4">
+                      <h4 className="text-xs font-bold text-app-warning uppercase mb-2">What Failed</h4>
+                      <p className="text-sm text-app-text-primary">{analysis.evidence.previouslyFailed}</p>
                     </div>
-                    <div className="bg-green-950/20 border border-green-900/30 rounded-lg p-4">
-                      <h4 className="text-xs font-bold text-green-500 uppercase tracking-wider mb-2">What Worked</h4>
-                      <p className="text-sm text-slate-300">{analysis.evidence.previouslyWorked}</p>
+                    <div className="bg-app-success/10 border border-app-success/30 rounded-lg p-4">
+                      <h4 className="text-xs font-bold text-app-success uppercase mb-2">What Worked</h4>
+                      <p className="text-sm text-app-text-primary">{analysis.evidence.previouslyWorked}</p>
                     </div>
                   </div>
 
-                  <div className="bg-blue-950/20 border border-blue-900/30 rounded-lg p-5">
-                    <h4 className="text-xs font-bold text-blue-500 uppercase tracking-wider mb-2">Preventive Action Required</h4>
-                    <p className="text-slate-200 font-medium">{analysis.evidence.preventiveAction}</p>
+                  {/* Feedback UI */}
+                  <div className="mt-6 pt-6 border-t border-red-900/30 flex items-center justify-between">
+                    <span className="text-sm text-app-text-secondary">Was this warning helpful?</span>
+                    <div className="flex gap-2">
+                      <button onClick={() => handleFeedback('USEFUL')} className="px-3 py-1 text-xs font-medium bg-app-card hover:bg-app-success/20 text-app-text-primary hover:text-app-success rounded transition-colors">Useful</button>
+                      <button onClick={() => handleFeedback('FALSE_POSITIVE')} className="px-3 py-1 text-xs font-medium bg-app-card hover:bg-app-warning/20 text-app-text-primary hover:text-app-warning rounded transition-colors">False Positive</button>
+                    </div>
                   </div>
                 </div>
               )}

@@ -6,6 +6,8 @@ import java.util.List;
 @Data
 @Builder
 public class StructuredExperience {
+    private String documentId;
+    private java.time.Instant timestamp;
     private String title;
     private String whatHappened;
     private String whyItHappened;

@@ -1,4 +1,5 @@
 package com.recallx.recallx.memory;
+
 import com.recallx.recallx.memory.dto.StructuredExperience;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,7 +12,7 @@ public class HindsightMemoryAdapterTest {
 
     @BeforeEach
     void setUp() {
-        adapter = new HindsightMemoryAdapter();
+        adapter = new HindsightMemoryAdapter("http://localhost:8888", "mock-key");
     }
 
     @Test
@@ -40,10 +41,10 @@ public class HindsightMemoryAdapterTest {
         // We assert that the organization ID is passed correctly and isolated
         StructuredExperience org1Exp = StructuredExperience.builder().title("Timeout").organizationId(1L).build();
         StructuredExperience org2Exp = StructuredExperience.builder().title("Timeout").organizationId(2L).build();
-        
+
         Optional<String> id1 = adapter.rememberExperience(org1Exp);
         Optional<String> id2 = adapter.rememberExperience(org2Exp);
-        
+
         assertNotEquals(id1.orElse("1"), id2.orElse("2"));
     }
 }

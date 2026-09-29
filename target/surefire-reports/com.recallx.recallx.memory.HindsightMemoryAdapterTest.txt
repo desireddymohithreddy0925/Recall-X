@@ -1,4 +1,14 @@
 -------------------------------------------------------------------------------
 Test set: com.recallx.recallx.memory.HindsightMemoryAdapterTest
 -------------------------------------------------------------------------------
-Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.698 s -- in com.recallx.recallx.memory.HindsightMemoryAdapterTest
+Tests run: 4, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.380 s <<< FAILURE! -- in com.recallx.recallx.memory.HindsightMemoryAdapterTest
+com.recallx.recallx.memory.HindsightMemoryAdapterTest.testStoringExperience -- Time elapsed: 0.003 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: expected: <true> but was: <false>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:158)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:139)
+	at org.junit.jupiter.api.AssertTrue.failNotTrue(AssertTrue.java:69)
+	at org.junit.jupiter.api.AssertTrue.assertTrue(AssertTrue.java:41)
+	at org.junit.jupiter.api.AssertTrue.assertTrue(AssertTrue.java:35)
+	at org.junit.jupiter.api.Assertions.assertTrue(Assertions.java:195)
+	at com.recallx.recallx.memory.HindsightMemoryAdapterTest.testStoringExperience(HindsightMemoryAdapterTest.java:22)
+

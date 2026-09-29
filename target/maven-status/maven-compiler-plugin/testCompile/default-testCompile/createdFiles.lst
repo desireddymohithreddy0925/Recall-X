@@ -1,3 +1,11 @@
+com/recallx/recallx/service/DeploymentAnalysisServiceTest.class
 com/recallx/recallx/TestRecallXApplication.class
+com/recallx/recallx/integration/GithubIntegrationAdapterTest.class
+com/recallx/recallx/security/SecurityIntegrationTest.class
+com/recallx/recallx/ai/ClaudeExperienceExtractorTest.class
+com/recallx/recallx/entity/IncidentRelationshipTest.class
+com/recallx/recallx/agent/MemoryReasoningAgentTest.class
 com/recallx/recallx/TestcontainersConfiguration.class
+com/recallx/recallx/service/PatternDetectionServiceTest.class
+com/recallx/recallx/memory/HindsightMemoryAdapterTest.class
 com/recallx/recallx/RecallXApplicationTests.class

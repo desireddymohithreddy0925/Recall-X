@@ -1,0 +1,208 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-v2-schema-refactor
+      author: antigravity
+      changes:
+        - createTable:
+            tableName: services
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: canonical_name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: organization_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+        
+        - createTable:
+            tableName: config_keys
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: service_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: canonical_key_name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: varchar(1000)
+
+        - createTable:
+            tableName: fix_attempts
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: incident_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: seq
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: action
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: outcome
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+
+        - createTable:
+            tableName: decisions
+            columns:
+              - column:
+                  name: id
+                  type: varchar(50)
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: service_id
+                  type: bigint
+              - column:
+                  name: config_key_id
+                  type: bigint
+              - column:
+                  name: decision_text
+                  type: text
+              - column:
+                  name: reason
+                  type: text
+              - column:
+                  name: status
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: superseded_by
+                  type: varchar(50)
+              - column:
+                  name: linked_incident_id
+                  type: bigint
+
+        - createTable:
+            tableName: deployment_changes
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: deployment_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: config_key_id
+                  type: bigint
+              - column:
+                  name: old_value
+                  type: varchar(500)
+              - column:
+                  name: new_value
+                  type: varchar(500)
+
+        - createTable:
+            tableName: warnings
+            columns:
+              - column:
+                  name: id
+                  type: varchar(50)
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: deployment_id
+                  type: bigint
+              - column:
+                  name: cited_refs
+                  type: varchar(1000)
+              - column:
+                  name: severity
+                  type: varchar(50)
+              - column:
+                  name: status
+                  type: varchar(50)
+              - column:
+                  name: verdict_reason
+                  type: text
+              - column:
+                  name: decided_by
+                  type: varchar(255)
+              - column:
+                  name: decided_at
+                  type: datetime
+
+        - addColumn:
+            tableName: incidents
+            columns:
+              - column:
+                  name: root_cause
+                  type: text
+              - column:
+                  name: lesson
+                  type: text
+
+        - createTable:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: username
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: password
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: role
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: organization_id
+                  type: bigint
+              - column:
+                  name: created_at
+                  type: timestamp
+                  constraints:
+                    nullable: false

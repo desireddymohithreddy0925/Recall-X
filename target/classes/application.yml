@@ -5,13 +5,13 @@ spring:
   application:
     name: recall-x
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/recallx?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:root}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:h2:mem:recallx;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none
     show-sql: ${JPA_SHOW_SQL:false}
     properties:
       hibernate:
@@ -19,6 +19,15 @@ spring:
   liquibase:
     change-log: classpath:/db/changelog/db.changelog-master.yaml
     enabled: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://securetoken.google.com/YOUR_FIREBASE_PROJECT_ID
+
+hindsight:
+  base-url: http://localhost:8888
+  api-key: ""
 
 management:
   endpoints:
