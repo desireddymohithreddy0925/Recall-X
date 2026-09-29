@@ -1,112 +1,253 @@
+<div align="center">
+
 # RECALL-X
 
-**An engineering memory that checks every config change and troubleshooting question against what your team already learned: what failed, why things are set the way they are, and which of its own warnings were wrong.** Built on [Hindsight](https://github.com/vectorize-io/hindsight) agent memory.
+### The engineering memory that remembers what failed, why things are set the way they are, and which of its own warnings were wrong.
 
-Demo video: *(link added after recording)*
+Every config change and on-call question is checked against the team's history, using [Hindsight](https://github.com/vectorize-io/hindsight) agent memory.
+
+[![CI](https://github.com/desireddymohithreddy0925/Recall-X/actions/workflows/ci.yml/badge.svg?branch=development)](https://github.com/desireddymohithreddy0925/Recall-X/actions/workflows/ci.yml)
+![Hindsight](https://img.shields.io/badge/memory-Hindsight-0f766e)
+![Java 21](https://img.shields.io/badge/Java-21-e76f00?logo=openjdk&logoColor=white)
+![Spring Boot 4.1](https://img.shields.io/badge/Spring_Boot-4.1-6db33f?logo=springboot&logoColor=white)
+![React 18](https://img.shields.io/badge/React-18-149eca?logo=react&logoColor=white)
+![MySQL 8](https://img.shields.io/badge/MySQL-8-4479a1?logo=mysql&logoColor=white)
+![Tests](https://img.shields.io/badge/tests-57_passing-2ea44f)
+
+[See it work](#see-it-work) · [How it uses Hindsight](#how-recall-x-uses-hindsight) · [Design](#the-rule-recall-decides-reflect-explains) · [Run it](#run-it-locally) · [Deep dive](docs/HINDSIGHT.md)
+
+<!-- Demo video: add the YouTube link here once it's published. -->
+
+<img src="docs/images/ask-panels.png" alt="The same on-call question answered without memory and with RECALL-X memory" width="880">
+
+<sub>The same question, role and format, answered twice. <b>Left:</b> gpt-oss-120b on its own. <b>Right:</b> Hindsight's reflect over the team's memory. Every cited record was checked against the database before it reached the screen.</sub>
+
+</div>
 
 ---
 
 ## The problem
 
-In March, a deployment at Acme Pay raised `spring.datasource.hikari.maximum-pool-size` from 20 to 50. Four replicas × 50 = 200 connections, above MySQL's limit of 150, and payments timed out (INC-18). The on-call engineer restarted the pods, which didn't help, and then reverted the pool size, which did. The team wrote a decision record: keep the pool at 20 (ADR-7).
+In March, a deployment at Acme Pay raised `spring.datasource.hikari.maximum-pool-size` from 20 to 50. Four replicas × 50 = 200 connections, above MySQL's limit of 150, and payments timed out (**INC-18**). The on-call engineer restarted the pods. That didn't help. Reverting the pool size did, and the team wrote a decision record: keep the pool at 20 (**ADR-7**).
 
-In May, a different engineer saw timeouts and restarted the pods again. It failed again (INC-31).
+In May, a different engineer saw timeouts and restarted the pods again. It failed again (**INC-31**).
 
-Nothing in that story was caused by missing documentation. The postmortem and the decision existed; nobody read them at the moment it mattered. RECALL-X puts that history in front of the engineer while they're troubleshooting and before a change ships.
+Documentation wasn't what was missing: the postmortem and the decision both existed. Nobody read them at the two moments that matter, **while troubleshooting** and **right before a change ships**. RECALL-X puts that history in front of the engineer at exactly those moments.
 
 ## What it does
 
-| Screen | What you see |
-|---|---|
-| **Ask** | One question answered twice, side by side: by a model on its own, and by Hindsight reasoning over the team's memory. The memory answer cites real incidents and decisions, with dates, and says which fixes already failed. |
-| **Deploy check** | Paste a config diff. Each changed key gets one of four outcomes: a **Decision Guard** warning (the value was set deliberately), a **history match** found by memory alone, **previously judged safe** (an engineer already marked this exact warning a false positive), or a quiet "no relevant history". Mark each warning Useful, False positive or Ignore. |
-| **Dashboard** | Counts from the database, warning precision by month, patterns Hindsight noticed on its own, and recent warnings with their verdicts. |
-| **New incident** | Record a closed incident in two minutes, including the fixes that failed. It goes straight into memory. |
+**Deploy check.** Paste a config diff and each changed key gets exactly one of four answers:
+
+| | Outcome | When | Decided by |
+|:-:|---|---|---|
+| 🛡️ | **Decision Guard** | A recorded decision governs this value (ADR-7 keeps the pool at 20) | MySQL. Works even if memory is down |
+| 🧠 | **History match** | No decision on file, but memory holds a matching incident (debug logging filled a disk in INC-13) | Hindsight recall, confirmed by reflect |
+| ✅ | **Previously judged safe** | An engineer already marked this exact warning a false positive (WARN-42) | The team's own verdicts |
+| 🤫 | **No relevant history** | Nothing in memory scores above the relevance floor | Hindsight recall. Reflect is never called |
+
+**Ask.** A troubleshooting question answered side by side: by a model on its own, and by Hindsight reasoning over the team's memory, with record IDs, dates and the fixes that already failed.
+
+**Learning loop.** Engineers mark each warning *Useful*, *False positive* (a reason is required) or *Ignore*. The verdict is retained as memory, so the same alarm isn't raised twice.
+
+**Dashboard.** Counts and precision by month from the database, plus **patterns Hindsight noticed on its own**, each linked to the records it came from.
+
+**New incident.** Record a closed incident, including the fixes that failed, and it goes straight into memory.
+
+## See it work
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+**One diff, four answers.** A four-line change gets a Decision Guard warning, a history match found by memory alone, a "previously judged safe" card for a remembered false alarm, and silence for the unrelated line.
+
+Each card shows:
+- what was **tried before and failed**, read from the database
+- the records it's **based on**, with dates and ages
+- what Hindsight used: memories, the `payment-config-rules` mental model, and the directives it applied
+- verdict buttons that feed the learning loop
+
+</td>
+<td width="50%">
+<img src="docs/images/deploy-results.png" alt="Deploy check results: Decision Guard, history match, previously judged safe, and no relevant history">
+</td>
+</tr>
+</table>
+
+<details>
+<summary><b>Dashboard: what RECALL-X knows</b></summary>
+<br>
+<img src="docs/images/dashboard-main.png" alt="Dashboard with counts, precision by month and patterns Hindsight noticed" width="820">
+</details>
 
 ## How RECALL-X uses Hindsight
 
-- **Retain:** every incident, decision, deployment and warning verdict is retained with its record ID as `document_id` and its real date as `timestamp`, so six months of history behave like six months.
-- **Recall:** decides whether a change has any history at all. Results are matched to records by `document_id` and filtered with a relevance floor (`min_scores.reranker`), so an unrelated change gets no warning.
-- **Reflect:** writes every answer people read, as structured output with citations, shaped by the bank's mission, disposition, six directives and a mental model. Every cited ID is checked against MySQL, and invented IDs never reach the screen.
-- **Observations:** Hindsight's own consolidated patterns appear on the dashboard with the records they came from.
-- **Learning:** each verdict is retained as memory. The same change with a false-positive verdict comes back as "previously judged safe" instead of the same alarm.
+Hindsight isn't a vector store bolted on the side. Every Hindsight feature below does a job in the product:
 
-The full design, with request examples: **[docs/HINDSIGHT.md](docs/HINDSIGHT.md)**.
+| Hindsight feature | What RECALL-X does with it | Where |
+|---|---|---|
+| **Retain** with `document_id`, `timestamp`, `context`, `metadata` | Every incident, decision, deployment and verdict is retained under its record ID, dated when it happened. Re-sending replaces rather than duplicates, and every recall result traces back to a MySQL row. | [`MemorySyncService`](backend/src/main/java/com/recallx/recallx/memory/MemorySyncService.java), [`MemoryTemplates`](backend/src/main/java/com/recallx/recallx/memory/MemoryTemplates.java) |
+| **Recall** with `min_scores.reranker` | The gate: does this change have *any* history? The query describes the change itself; weak matches are dropped inside Hindsight. | [`DecisionGuardService`](backend/src/main/java/com/recallx/recallx/guard/DecisionGuardService.java) |
+| **Reflect** with `response_schema` | Writes each warning as structured JSON: `matches_history`, summary, citations, failed fixes, recommendation. | [`DecisionGuardService`](backend/src/main/java/com/recallx/recallx/guard/DecisionGuardService.java) |
+| **Reflect** with `include.facts` → `based_on` | Every answer shows what it was based on: memories, mental model and directives. | [`BasedOn`](backend/src/main/java/com/recallx/recallx/memory/hindsight/BasedOn.java), [`SourcesLine`](frontend/src/components/SourcesLine.jsx) |
+| **Bank mission and disposition** | "Prioritise root causes, fixes that failed, and the reasons behind configuration decisions". Skepticism 4, literalism 4, empathy 2. | [`BankSetup`](backend/src/main/java/com/recallx/recallx/memory/BankSetup.java) |
+| **Directives** (6) | Cite record IDs, never invent history, name failed fixes, mention false positives, describe similarity (don't predict), newest decision wins. | [`BankSetup`](backend/src/main/java/com/recallx/recallx/memory/BankSetup.java) |
+| **Mental model** `payment-config-rules` | Which values were set deliberately, what incident led to each, and what failed before. Reflect reads it first. | [`BankSetup`](backend/src/main/java/com/recallx/recallx/memory/BankSetup.java) |
+| **Observations** with `source_facts` | The dashboard's "Patterns Hindsight noticed": beliefs Hindsight consolidated from several memories, linked to their source records. | [`PatternService`](backend/src/main/java/com/recallx/recallx/service/PatternService.java) |
+| **Documents API** | Resetting the history deletes every post-seed document from memory too, so memory and database stay in step. | [`MemorySyncService`](backend/src/main/java/com/recallx/recallx/memory/MemorySyncService.java) |
+
+All of it goes through one class, [`HindsightClient`](backend/src/main/java/com/recallx/recallx/memory/hindsight/HindsightClient.java), over Hindsight's REST API. The full design, with request examples, is in **[docs/HINDSIGHT.md](docs/HINDSIGHT.md)**.
+
+## The rule: recall decides, reflect explains
+
+Recall returns scored, traceable evidence, so the code makes decisions with it. Reflect writes explanations people can read, so the code uses its words and checks its lists.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor E as Engineer
+    participant R as RECALL-X
+    participant DB as MySQL
+    participant H as Hindsight
+    E->>R: config diff
+    R->>DB: active decision on this key? earlier false-positive verdict?
+    alt no decision and no verdict
+        R->>H: recall(change, min_scores.reranker = 0.3)
+        H-->>R: scored facts with document_id
+        R->>DB: which of these are real INC / ADR / WARN records?
+        Note over R,DB: none left → "no relevant history" (reflect is never called)
+    end
+    R->>H: reflect(prompt, response_schema, include.facts)
+    H-->>R: summary, matches_history, based_on
+    R->>DB: validate every cited ID · read failed fixes · read severity
+    R-->>E: warning card with checked citations
+    E->>R: Useful / False positive / Ignore
+    R->>H: retain verdict (document_id = WARN-n)
+```
+
+**Safeguards**
+
+- **Never invent history.** Every cited ID is checked against MySQL. Invented IDs are dropped, and a warning with no real reference isn't shown.
+- **Decision Guard doesn't depend on AI.** An active decision always produces a warning from a database lookup, even with Hindsight or the model down.
+- **Severity comes from the database**, never from a model.
+- **A memory-only warning needs two agreeing sources:** reflect must say the history matches, and at least one incident must appear in both recall's results and reflect's summary.
+- **Failures are said out loud.** If memory is unreachable, keys show "memory unavailable" (never "no history"), and Ask shows "Memory unavailable" instead of quietly falling back.
+- **Honest comparison.** Both Ask answers get the same role, question and format ([`Prompts`](backend/src/main/java/com/recallx/recallx/llm/Prompts.java)), and each panel names its model.
+
+## Measured, not guessed
+
+Every threshold was set from real Hindsight responses ([`tools/hindsight_spike.py`](tools/hindsight_spike.py), results in [docs/SPIKE_RESULTS.md](docs/SPIKE_RESULTS.md)).
+
+| Measurement | Result | What it changed |
+|---|---|---|
+| Recall score, pool-size change → ADR-7 | **0.88** | |
+| Recall score, debug logging → INC-13 | **0.41** | The relevance floor sits at **0.3** |
+| Recall score, unrelated keys (`server.compression.enabled`, `health.show-details`) | **0.25**, **0.03** | They stay quiet |
+| Recalled facts that still contain their record ID in the text | **62%** | Matching uses `document_id`, not a regex |
+| Retain → recallable | **2.7 s** | New incidents count almost immediately |
+| Reflect latency and cost | **9–13 s**, **45k–100k tokens** | Budgets are configurable per path |
+| The memory-free model inventing history when asked "what went wrong last quarter?" (8 runs each) | gpt-oss-120b **6/8**, qwen3.8-27b **2/8**, gemini-3.5-flash-lite **8/8** | This is the problem memory solves |
+
+Real runs also showed that reflect's `cited_ids` listed nearly every record it read. So citations come from the IDs the summary actually names, failed fixes come from MySQL, and an "earlier false positive" note is kept only for the same setting.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-  UI["React UI<br/>Ask · Deploy check · Dashboard · New incident"] -->|/api| API["Spring Boot<br/>rules layer: diff parser, Decision Guard,<br/>recall gate, ID validation, severity"]
-  API -->|"records, counts, severity"| DB[("MySQL<br/>system of record")]
-  API -->|"retain · recall · reflect"| HS["Hindsight Cloud<br/>bank recallx-acme"]
-  API -->|"memory-off answer"| LLM["Any OpenAI-compatible model<br/>(Groq or Gemini)"]
+  UI["<b>React UI</b><br/>Ask · Deploy check<br/>Dashboard · New incident"] -->|/api| API["<b>Spring Boot rules layer</b><br/>diff parser · Decision Guard<br/>recall gate · ID validation · severity"]
+  API -->|"records, counts, severity"| DB[("<b>MySQL</b><br/>system of record")]
+  API -->|"retain · recall · reflect"| HS["<b>Hindsight Cloud</b><br/>memory bank recallx-acme<br/>mission · directives · mental model"]
+  API -->|"memory-off answer"| LLM["<b>Any OpenAI-compatible model</b><br/>Groq gpt-oss-120b by default"]
 ```
 
-The code decides with recall; people read reflect. API keys stay on the server and never reach the browser.
+API keys stay on the server and never reach the browser.
 
 ## Run it locally
 
-You need JDK 21 or newer, Node 20 or newer, MySQL 8 (or Docker), and Python 3.9 or newer for the tools. You also need a [Hindsight Cloud](https://ui.hindsight.vectorize.io) API key and a key for any OpenAI-compatible model API, used for the memory-off answer: [Groq](https://groq.com), or Gemini through its OpenAI-compatible endpoint (see `.env.example`).
+**You need:** JDK 21+, Node 20+, MySQL 8 (or Docker), Python 3.9+ for the tools, a [Hindsight Cloud](https://ui.hindsight.vectorize.io) API key, and a key for any OpenAI-compatible model API ([Groq](https://groq.com) by default; Gemini works too, see `.env.example`).
 
-1. **Settings.** Copy `.env.example` to `.env` and fill in `HINDSIGHT_API_KEY`, `LLM_API_KEY`, `DB_PASSWORD` and `RECALLX_ADMIN_TOKEN`. The backend reads this file directly, so there's nothing to export. Write one `KEY=value` per line, with no quotes and no comments at the end of a line.
+**1. Settings.** Copy `.env.example` to `.env` and fill in `HINDSIGHT_API_KEY`, `LLM_API_KEY`, `DB_PASSWORD` and `RECALLX_ADMIN_TOKEN`. The backend reads this file directly. Use one `KEY=value` per line, with no quotes and no comments at the end of a line.
 
-2. **Database.** Either start MySQL in Docker:
+**2. Database.** Start MySQL in Docker:
+
+```bash
+docker compose up -d mysql
+```
+
+Or create it in a local MySQL:
+
+```sql
+CREATE DATABASE recallx;
+CREATE USER 'recallx'@'localhost' IDENTIFIED BY 'change-me';
+GRANT ALL ON recallx.* TO 'recallx'@'localhost';
+```
+
+**3. Backend** (port 8080). Liquibase creates the schema and loads the history on first start.
+
+```bash
+cd backend
+./mvnw spring-boot:run          # macOS / Linux
+.\mvnw.cmd spring-boot:run      # Windows PowerShell
+```
+
+**4. Seed memory** (once). This retains the history into Hindsight and sets up the bank's mission, directives and mental model.
+
+```bash
+curl -X POST -H "X-Admin-Token: <your token>" localhost:8080/api/admin/memory/sync
+```
+
+```powershell
+Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/admin/memory/sync -Headers @{ 'X-Admin-Token' = '<your token>' }
+```
+
+Hindsight processes the records in the background. It's ready when this returns `INC-18` and `ADR-7` in `recordIds`:
+
+```bash
+curl -H "X-Admin-Token: <your token>" "localhost:8080/api/admin/memory/check?q=payment-service%20maximum-pool-size"
+```
+
+**5. Frontend** (port 5173):
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+Open **http://localhost:5173**.
+
+> **New Hindsight account?** Run `python tools/hindsight_spike.py` first. It checks the API behaviour RECALL-X depends on against a throwaway bank and recommends `HINDSIGHT_RETAIN_PATH`, `HINDSIGHT_MIN_RERANKER` and `RECALLX_CHECK_BUDGET`.
+
+### Try it in 60 seconds
+
+1. **Ask:** click *"The payment API is timing out. What should I do?"* and compare the two panels.
+2. **Deploy check:** click **Load demo change**, then **Check change**. You get four keys and four different answers.
+3. Mark the pool-size warning **Useful**. The verdict is retained into Hindsight.
+4. Reset afterwards so the next run starts from the same point:
    ```bash
-   docker compose up -d mysql
-   ```
-   or create the database in a local MySQL:
-   ```sql
-   CREATE DATABASE recallx;
-   CREATE USER 'recallx'@'localhost' IDENTIFIED BY 'change-me';
-   GRANT ALL ON recallx.* TO 'recallx'@'localhost';
+   curl -X POST -H "X-Admin-Token: <your token>" localhost:8080/api/admin/demo/reset
    ```
 
-3. **Backend** (port 8080). Liquibase creates the schema and loads the simulated history on first start.
-   ```bash
-   cd backend
-   ./mvnw spring-boot:run          # macOS / Linux
-   .\mvnw.cmd spring-boot:run      # Windows PowerShell
-   ```
-
-4. **Seed memory** (once). This retains the history into Hindsight and sets up the bank's mission, directives and mental model.
-   ```bash
-   curl -X POST -H "X-Admin-Token: <your token>" localhost:8080/api/admin/memory/sync
-   # PowerShell:
-   Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/admin/memory/sync -Headers @{ 'X-Admin-Token' = '<your token>' }
-   ```
-   Hindsight processes the records in the background. Check when they're searchable:
-   ```bash
-   curl -H "X-Admin-Token: <your token>" "localhost:8080/api/admin/memory/check?q=payment-service%20maximum-pool-size"
-   ```
-   It's ready when `recordIds` includes `INC-18` and `ADR-7`.
-
-5. **Frontend** (port 5173):
-   ```bash
-   cd frontend
-   npm ci
-   npm run dev
-   ```
-   Open http://localhost:5173.
-
-The first time you use a new Hindsight account, run `python tools/hindsight_spike.py`. It checks the API behaviour RECALL-X depends on against a throwaway bank, then writes the recommended `HINDSIGHT_RETAIN_PATH`, `HINDSIGHT_MIN_RERANKER` and `RECALLX_CHECK_BUDGET` to `docs/SPIKE_RESULTS.md`.
+The full runbook is in [docs/DEMO.md](docs/DEMO.md).
 
 ## Tests
 
 ```bash
-cd backend && ./mvnw test                  # unit and client contract tests; Hindsight and the model are mocked
-python tools/smoke_test.py                 # the acceptance checklist, against a running backend
+cd backend && ./mvnw test        # 57 unit and contract tests; Hindsight and the model are mocked
+python tools/smoke_test.py       # acceptance checklist against a running backend
 ```
 
-`smoke_test.py` resets the demo, detects whether Hindsight is reachable, and checks the matching behaviour: the full demo with memory up, or the fallbacks with memory down. It resets again when it finishes. CI runs the backend tests, the frontend build, and a check that the banned word from the content guide appears nowhere in the repository.
+`smoke_test.py` detects whether Hindsight is reachable and checks the matching behaviour: the full flow with memory up, or the fallbacks with memory down. It resets the history before and after. CI runs the backend tests, the frontend build and a content check on every push.
 
 ## About the data
 
-Everything on screen is **simulated history** for Acme Pay, a fictional payments company, from 2 March to 25 September 2026. It has one service (`payment-service`, 4 replicas, MySQL `max_connections` 150), 15 incidents, 5 decisions, 60 deployments and 22 rated warnings. The numbers are kept consistent: for example, 4 × 50 = 200 connections is what broke the 150 limit in INC-18. The UI labels the history as simulated.
+Everything on screen is **simulated history** for Acme Pay, a fictional payments company, from March to September 2026: one service (`payment-service`, 4 replicas, MySQL `max_connections` 150), 15 incidents, 5 decisions, 60 deployments and 22 rated warnings. The numbers are kept consistent (4 × 50 = 200 connections is what broke the limit of 150 in INC-18), and the UI labels the history as simulated. The precision chart comes from that seed history, not from real use.
 
-The history is generated by `tools/gen_seed.py`. Change the script and regenerate; never edit the SQL by hand. `POST /api/admin/demo/reset` removes everything created after the seed, so a demo can run again from the same starting point.
+The history is generated by [`tools/gen_seed.py`](tools/gen_seed.py). Change the script and regenerate; don't edit the SQL by hand.
 
-## API
+<details>
+<summary><b>API reference</b></summary>
+<br>
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -119,20 +260,25 @@ The history is generated by `tools/gen_seed.py`. Change the script and regenerat
 | GET | `/api/records/{id}` | One record's summary |
 | GET | `/api/config-keys` | The canonical config keys |
 | POST | `/api/incidents` | Record a closed incident and retain it |
+| GET | `/api/health` | Health check |
 | POST | `/api/admin/memory/sync` | Retain everything not yet in memory, then set up the bank (admin token) |
 | GET | `/api/admin/memory/check?q=` | See what recall returns, with scores (admin token) |
-| POST | `/api/admin/demo/reset` | Remove everything created after the seed (admin token) |
+| POST | `/api/admin/demo/reset` | Remove everything created after the seed, from MySQL and memory (admin token) |
 
 Swagger UI: http://localhost:8080/swagger-ui.html
 
-## Project structure
+</details>
+
+<details>
+<summary><b>Project structure</b></summary>
+<br>
 
 ```
 Recall-X/
 ├── .env.example                  Settings template: copy to .env (git-ignored) and fill in the keys
 ├── .gitattributes                Line endings (LF for mvnw, CRLF for .cmd)
 ├── .gitignore
-├── .github/workflows/ci.yml      Backend tests, frontend build, banned-word check
+├── .github/workflows/ci.yml      Backend tests, frontend build, content check
 ├── docker-compose.yml            MySQL 8 for local runs
 ├── README.md
 │
@@ -244,15 +390,25 @@ Recall-X/
     ├── HINDSIGHT.md              How RECALL-X uses Hindsight, with request examples
     ├── DEMO.md                   Demo runbook
     ├── IMPLEMENTATION_PLAN.md    The plan and build status
-    └── SPIKE_RESULTS.md          Real results from hindsight_spike.py
+    ├── SPIKE_RESULTS.md          Real results from hindsight_spike.py
+    └── images/                   Screenshots used in this README
 ```
 
 Not in the repository: `.env` (your keys), `backend/target/`, `frontend/node_modules/` and `frontend/dist/`.
 
-## Limitations
+</details>
 
-- One service and one team. Warnings never cross services, because there is only one.
-- No sign-in yet: the API is open except for the admin endpoints.
-- Deployments are entered by pasting a diff. Pull-request integration is the next step.
-- A "previously judged safe" match needs the same key and the same new value. Broader matching is future work.
-- The history is simulated. Precision numbers for April to September come from the seed data, not from real use.
+## Limitations and what's next
+
+- **One service, one team.** Warnings never cross services, because there's only one. Multi-service banks are next.
+- **Diffs are pasted.** Pull-request integration, so the check runs as a PR status, is the next step.
+- **"Previously judged safe" needs the same key and the same new value.** Broader matching (for example, "any retry change while idempotency is on") is future work.
+- **No sign-in yet.** The API is open except for the admin endpoints.
+- **Deploy-gate speed, not autocomplete speed.** Keys are checked in parallel, but a check still takes 10 to 20 seconds, because reflect explains each flagged key.
+- **The history is simulated.** Precision numbers come from the seed data, not from real use.
+
+## Built with
+
+[Hindsight](https://github.com/vectorize-io/hindsight) by Vectorize for agent memory ([docs](https://hindsight.vectorize.io/), [what agent memory is](https://vectorize.io/what-is-agent-memory)) · Spring Boot · MySQL · Liquibase · React · Vite · Tailwind CSS · Recharts · Groq
+
+Built by **Shaik Aayan Javed** and **[@desireddymohithreddy0925](https://github.com/desireddymohithreddy0925)**.
