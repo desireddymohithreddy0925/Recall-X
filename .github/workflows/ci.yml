@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Unit and client contract tests (Hindsight and the model are mocked)
+        working-directory: backend
+        run: ./mvnw -B test
+
+  frontend:
+    name: Frontend build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - working-directory: frontend
+        run: npm ci && npm run build
+
+  content-rules:
+    name: Banned word check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # The content guide disqualifies any article, post or video that mentions the event type.
+      # The pattern is written so this file doesn't match itself.
+      - run: "! grep -rniE 'hack[a]thon' --exclude-dir=node_modules --exclude-dir=target --exclude-dir=dist --exclude-dir=.git ."

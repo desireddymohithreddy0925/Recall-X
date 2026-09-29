@@ -1,49 +1,62 @@
-import React from 'react'
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
-import Dashboard from './pages/Dashboard'
-import RiskAnalysis from './pages/RiskAnalysis'
-import { Activity, ShieldAlert, BookOpen, GitMerge, LayoutDashboard } from 'lucide-react'
+import { NavLink, Route, Routes } from 'react-router-dom';
+import { FilePlus2, GitCompareArrows, LayoutDashboard, MessageSquareText } from 'lucide-react';
+import Ask from './pages/Ask.jsx';
+import DeployCheck from './pages/DeployCheck.jsx';
+import Dashboard from './pages/Dashboard.jsx';
+import NewIncident from './pages/NewIncident.jsx';
+import { SimulatedBadge } from './components/StatusNotes.jsx';
 
-function App() {
+const NAV = [
+  { to: '/', label: 'Ask', icon: MessageSquareText, end: true },
+  { to: '/deploy', label: 'Deploy check', icon: GitCompareArrows },
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/incidents/new', label: 'New incident', icon: FilePlus2 },
+];
+
+export default function App() {
   return (
-    <BrowserRouter>
-      <div className="flex h-screen bg-slate-950 text-slate-200 font-sans">
-        {/* Sidebar */}
-        <aside className="w-64 bg-slate-900 border-r border-slate-800 p-4 flex flex-col">
-          <div className="flex items-center gap-3 mb-10 px-2">
-            <Activity className="w-8 h-8 text-blue-500" />
-            <h1 className="text-xl font-bold tracking-tight text-white">RECALL-X</h1>
-          </div>
-          <nav className="flex-1 space-y-2">
-            <Link to="/" className="flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
-              <LayoutDashboard className="w-5 h-5" /> Dashboard
-            </Link>
-            <Link to="/risk" className="flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
-              <ShieldAlert className="w-5 h-5" /> Risk Analysis
-            </Link>
-            <Link to="/incidents" className="flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
-              <Activity className="w-5 h-5" /> Incidents
-            </Link>
-            <Link to="/deployments" className="flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
-              <GitMerge className="w-5 h-5" /> Deployments
-            </Link>
-            <Link to="/lessons" className="flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
-              <BookOpen className="w-5 h-5" /> Lessons
-            </Link>
-          </nav>
-        </aside>
+    <div className="flex min-h-full flex-col md:flex-row">
+      <aside className="flex shrink-0 flex-col border-b border-[var(--rule)] bg-white md:w-60 md:border-b-0 md:border-r">
+        <div className="px-6 pb-4 pt-6">
+          <p className="text-xl font-semibold tracking-tight">RECALL-X</p>
+          <p className="mt-1 text-sm text-[var(--muted)]">Engineering memory for payment-service</p>
+        </div>
+        <nav className="flex gap-1 overflow-x-auto px-3 pb-3 md:flex-col" aria-label="Main">
+          {NAV.map(({ to, label, icon: Icon, end }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              className={({ isActive }) =>
+                `flex items-center gap-3 whitespace-nowrap rounded-md px-3 py-2 text-[15px] ${
+                  isActive
+                    ? 'bg-[var(--memory-tint)] font-medium text-[var(--memory)]'
+                    : 'text-[var(--ink)] hover:bg-[var(--paper)]'
+                }`
+              }
+            >
+              <Icon size={18} aria-hidden="true" />
+              {label}
+            </NavLink>
+          ))}
+        </nav>
+        <p className="mt-auto hidden px-6 pb-6 text-sm text-[var(--muted)] md:block">
+          Memory by Hindsight. The history shown is simulated, for Acme Pay, a fictional company.
+        </p>
+      </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 overflow-auto bg-slate-950">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/risk" element={<RiskAnalysis />} />
-            <Route path="*" element={<div className="p-8 text-center text-slate-500">Feature coming soon in full release.</div>} />
-          </Routes>
-        </main>
-      </div>
-    </BrowserRouter>
-  )
+      <main className="flex-1 px-5 py-6 md:px-10">
+        <div className="mb-4 flex justify-end">
+          <SimulatedBadge />
+        </div>
+        <Routes>
+          <Route path="/" element={<Ask />} />
+          <Route path="/deploy" element={<DeployCheck />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/incidents/new" element={<NewIncident />} />
+          <Route path="*" element={<Ask />} />
+        </Routes>
+      </main>
+    </div>
+  );
 }
-
-export default App

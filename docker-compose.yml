@@ -1,0 +1,18 @@
+# Optional: MySQL 8 for local development. A local MySQL install works too.
+# Reads DB_USERNAME, DB_PASSWORD and DB_ROOT_PASSWORD from the root .env.
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: recallx
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      TZ: UTC
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+volumes:
+  mysql-data:

@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: recall-x
+  config:
+    # Read the repository's .env (KEY=value lines) as properties, whether the app runs from
+    # backend/ or from the repository root. Real environment variables still take priority.
+    import:
+      - optional:file:.env[.properties]
+      - optional:file:../.env[.properties]
+  datasource:
+    # serverTimezone=UTC keeps the seeded dates correct.
+    url: ${DB_URL:jdbc:mysql://localhost:3306/recallx?serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:recallx}
+    password: ${DB_PASSWORD:}
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+server:
+  port: ${SERVER_PORT:8080}
+
+recallx:
+  default-service: payment-service
+  seed-memory-on-startup: ${SEED_MEMORY_ON_STARTUP:false}
+  admin-token: ${RECALLX_ADMIN_TOKEN:}
+  cors-allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  hindsight:
+    base-url: ${HINDSIGHT_URL:https://api.hindsight.vectorize.io}
+    api-key: ${HINDSIGHT_API_KEY:}
+    bank-id: ${HINDSIGHT_BANK_ID:recallx-acme}
+    retain-path: ${HINDSIGHT_RETAIN_PATH:/memories}
+    min-reranker: ${HINDSIGHT_MIN_RERANKER:0.3}
+    ask-budget: ${RECALLX_ASK_BUDGET:mid}
+    check-budget: ${RECALLX_CHECK_BUDGET:high}
+    connect-timeout: 10s
+    read-timeout: 60s
+  llm:
+    base-url: ${LLM_BASE_URL:https://api.groq.com/openai/v1}
+    api-key: ${LLM_API_KEY:}
+    model: ${LLM_MODEL:openai/gpt-oss-120b}
+    fallback-model: ${LLM_FALLBACK_MODEL:qwen/qwen3-32b}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
