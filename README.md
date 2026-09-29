@@ -128,12 +128,126 @@ Swagger UI: http://localhost:8080/swagger-ui.html
 ## Project structure
 
 ```
-backend/     Spring Boot 4.1 (Java 21): api, guard (Decision Guard), memory (Hindsight client, sync, bank setup),
-             llm (memory-off answer), service, store (JDBC), config; Liquibase schema and seed
-frontend/    React 18, Vite 5, Tailwind 3, Recharts
-tools/       gen_seed.py, hindsight_spike.py, smoke_test.py (standard library only)
-docs/        HINDSIGHT.md, IMPLEMENTATION_PLAN.md, SPIKE_RESULTS.md
+Recall-X/
+├── .env.example                  Settings template: copy to .env (git-ignored) and fill in the keys
+├── .gitattributes                Line endings (LF for mvnw, CRLF for .cmd)
+├── .gitignore
+├── .github/workflows/ci.yml      Backend tests, frontend build, banned-word check
+├── docker-compose.yml            MySQL 8 for local runs
+├── README.md
+│
+├── backend/                      Spring Boot 4.1, Java 21
+│   ├── pom.xml
+│   ├── mvnw, mvnw.cmd            Maven wrapper (no Maven install needed)
+│   └── src/
+│       ├── main/
+│       │   ├── java/com/recallx/recallx/
+│       │   │   ├── RecallXApplication.java
+│       │   │   ├── api/                          REST controllers
+│       │   │   │   ├── AskController.java             POST /api/ask
+│       │   │   │   ├── DeploymentCheckController.java POST /api/deployments/check
+│       │   │   │   ├── WarningController.java         GET /api/warnings, POST /api/warnings/{id}/verdict
+│       │   │   │   ├── StatsController.java           GET /api/stats
+│       │   │   │   ├── PatternsController.java        GET /api/patterns
+│       │   │   │   ├── RecordController.java          GET /api/records/{id}
+│       │   │   │   ├── ConfigKeyController.java       GET /api/config-keys
+│       │   │   │   ├── IncidentController.java        POST /api/incidents
+│       │   │   │   ├── AdminController.java           /api/admin: memory sync, memory check, demo reset
+│       │   │   │   ├── HealthController.java          GET /api/health
+│       │   │   │   └── ApiExceptionHandler.java       Error responses
+│       │   │   ├── common/                       BadRequest, Conflict and NotFound exceptions
+│       │   │   ├── config/
+│       │   │   │   ├── RecallxProperties.java         All recallx.* settings, read from .env
+│       │   │   │   ├── SecurityConfig.java            CORS, open API, admin endpoints behind a token
+│       │   │   │   ├── AdminTokenFilter.java          Checks X-Admin-Token on /api/admin/**
+│       │   │   │   └── StartupChecks.java             Warns at startup about missing keys
+│       │   │   ├── guard/                        The deploy check
+│       │   │   │   ├── DiffParser.java                Pasted diff -> config changes
+│       │   │   │   ├── DecisionGuardService.java      Decision Guard, recall gate, reflect wording, ID checks
+│       │   │   │   ├── KeyResult.java                 One outcome per changed key
+│       │   │   │   ├── WarningView.java, ClearedView.java, CheckResponse.java
+│       │   │   │   └── DiffParseException.java
+│       │   │   ├── memory/                       Everything that goes into Hindsight
+│       │   │   │   ├── MemorySyncService.java         Retains records not yet in memory
+│       │   │   │   ├── MemoryTemplates.java           Record -> memory text
+│       │   │   │   ├── BankSetup.java                 Mission, disposition, directives, mental model
+│       │   │   │   ├── RecordIds.java                 Finds INC-, ADR-, DEP- and WARN- IDs in text
+│       │   │   │   └── hindsight/
+│       │   │   │       ├── HindsightClient.java       The only class that calls Hindsight (REST)
+│       │   │   │       ├── RetainItem.java, RecallRequest.java, RecallResponse.java, RecallHit.java
+│       │   │   │       ├── ReflectAnswer.java, BasedOn.java, Sources.java
+│       │   │   │       └── MemoryUnavailableException.java
+│       │   │   ├── llm/
+│       │   │   │   ├── BaselineLlmClient.java         The memory-off answer (any OpenAI-compatible API)
+│       │   │   │   └── Prompts.java                   Shared role and format for both answers
+│       │   │   ├── service/
+│       │   │   │   ├── AskService.java                Runs both answers side by side
+│       │   │   │   ├── VerdictService.java            Saves a verdict and retains it as memory
+│       │   │   │   ├── IncidentCaptureService.java    New incident -> MySQL and memory
+│       │   │   │   ├── PatternService.java            Observations for the dashboard
+│       │   │   │   ├── StatsService.java              Dashboard numbers, all from the database
+│       │   │   │   └── DemoResetService.java          Removes everything created after the seed
+│       │   │   └── store/                        JDBC access to MySQL
+│       │   │       ├── IncidentStore.java, DecisionStore.java, DeploymentStore.java, WarningStore.java
+│       │   │       ├── RecordLookup.java              Checks IDs exist; severity and summaries
+│       │   │       ├── ResetStore.java, Jdbc.java
+│       │   │       └── Incident, Decision, Deployment, Warning, FixAttempt, ConfigChange,
+│       │   │           ClearedVerdict, Counts, MonthPrecision, RecordSummary   (row records)
+│       │   └── resources/
+│       │       ├── application.yml                   Reads .env; defaults for every setting
+│       │       └── db/changelog/
+│       │           ├── db.changelog-master.yaml
+│       │           └── changes/
+│       │               ├── 001-schema.sql            Tables
+│       │               └── 002-seed-data.sql         Simulated history (generated by tools/gen_seed.py)
+│       └── test/java/com/recallx/recallx/            57 tests; Hindsight and the model are mocked
+│           ├── TestProperties.java
+│           ├── config/AdminTokenFilterTest.java
+│           ├── guard/DecisionGuardServiceTest.java, DiffParserTest.java
+│           ├── llm/BaselineLlmClientTest.java
+│           ├── memory/MemoryTemplatesTest.java, RecordIdsTest.java
+│           ├── memory/hindsight/HindsightClientTest.java
+│           └── service/AskServiceTest.java, PatternServiceTest.java, VerdictServiceTest.java
+│
+├── frontend/                     React 18, Vite 5, Tailwind 3, Recharts
+│   ├── .env.example              Optional: VITE_BACKEND_URL for the dev proxy
+│   ├── index.html
+│   ├── package.json, package-lock.json
+│   ├── vite.config.js            Proxies /api to the backend
+│   ├── tailwind.config.js, postcss.config.js
+│   └── src/
+│       ├── main.jsx, App.jsx     Entry point, navigation
+│       ├── api.js                Calls to the backend
+│       ├── format.js             Dates and ages
+│       ├── index.css
+│       ├── pages/
+│       │   ├── Ask.jsx                 Two answers side by side
+│       │   ├── DeployCheck.jsx         Paste a diff, see each key's outcome, mark warnings
+│       │   ├── Dashboard.jsx           Counts, precision by month, patterns, recent warnings
+│       │   └── NewIncident.jsx         Record a closed incident
+│       └── components/
+│           ├── WarningCard.jsx         A warning with its records and verdict buttons
+│           ├── ClearedCard.jsx         "Previously judged safe"
+│           ├── VerdictButtons.jsx      Useful / False positive / Ignore
+│           ├── RecordChip.jsx          Record ID with date and age
+│           ├── SourcesLine.jsx         What reflect was based on
+│           ├── StatusNotes.jsx         Simulated-data badge, memory status banner
+│           ├── PrecisionChart.jsx
+│           └── Markdown.jsx            Safe rendering of bullets, bold and code
+│
+├── tools/                        Python 3.9+, standard library only
+│   ├── gen_seed.py               Generates 002-seed-data.sql
+│   ├── hindsight_spike.py        Checks the Hindsight API against a throwaway bank
+│   └── smoke_test.py             Acceptance checklist against a running backend
+│
+└── docs/
+    ├── HINDSIGHT.md              How RECALL-X uses Hindsight, with request examples
+    ├── DEMO.md                   Demo runbook
+    ├── IMPLEMENTATION_PLAN.md    The plan and build status
+    └── SPIKE_RESULTS.md          Real results from hindsight_spike.py
 ```
+
+Not in the repository: `.env` (your keys), `backend/target/`, `frontend/node_modules/` and `frontend/dist/`.
 
 ## Limitations
 
