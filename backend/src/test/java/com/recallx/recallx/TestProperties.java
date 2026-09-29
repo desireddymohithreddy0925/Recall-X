@@ -20,6 +20,6 @@ public final class TestProperties {
         return new RecallxProperties("payment-service", false, "admin-secret", List.of("http://localhost:5173"),
                 new RecallxProperties.Hindsight("https://hindsight.test", hindsightKey, "test-bank", "/memories", FLOOR,
                         "mid", "high", Duration.ofSeconds(1), Duration.ofSeconds(1)),
-                new RecallxProperties.Llm("https://llm.test/v1", llmKey, "openai/gpt-oss-120b", "qwen/qwen3-32b"));
+                new RecallxProperties.Llm("https://llm.test/v1", llmKey, "openai/gpt-oss-120b", "qwen/qwen3.8-27b"));
     }
 }

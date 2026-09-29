@@ -32,6 +32,6 @@ public record RecallxProperties(
             @DefaultValue("https://api.groq.com/openai/v1") String baseUrl,
             @DefaultValue("") String apiKey,
             @DefaultValue("openai/gpt-oss-120b") String model,
-            @DefaultValue("qwen/qwen3-32b") String fallbackModel) {
+            @DefaultValue("qwen/qwen3.8-27b") String fallbackModel) {
     }
 }

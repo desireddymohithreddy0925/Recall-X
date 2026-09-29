@@ -45,7 +45,7 @@ Priority labels: **Must** means the demo depends on it. **Should** means build i
 | Citations from `cited_ids` plus the summary | Citations from the IDs in the summary | In real runs `cited_ids` listed nearly every record reflect read |
 | Failed fixes from reflect's `failed_attempts` | From MySQL, for the warning's evidence incidents | Reflect mixed in attempts from unrelated incidents |
 | Show reflect's `prior_false_positive` | Only if it names a false positive on the same key | Reflect mentioned WARN-42 on every change |
-| Memory-off model on Groq | Any OpenAI-compatible API; the team's key is Gemini (`gemini-3.5-flash-lite`), falling back on 429 or 503 | The key available; Gemini's larger models were returning 503 under load |
+| Memory-off model on Groq, falling back to `qwen/qwen3-32b` | Groq `openai/gpt-oss-120b`, falling back to `qwen/qwen3.8-27b` on 429 or 503; any OpenAI-compatible API works (Gemini was tested) | `qwen3-32b` was retired from Groq. Asked "What went wrong in payment-service in the last three months?" 8 times each, `gpt-oss-120b` invented incidents 6 times, `qwen3.8-27b` 2 times and `gemini-3.5-flash-lite` 8 times. `gpt-oss-120b` stays as the main model: it is the strongest of the three, so the comparison isn't against a weak model, and it was the fastest |
 
 ---
 
@@ -240,7 +240,7 @@ LLM_BASE_URL=https://api.groq.com/openai/v1
 LLM_API_KEY=
 LLM_MODEL=openai/gpt-oss-120b
 # Used once if the main model returns 429 (rate limited)
-LLM_FALLBACK_MODEL=qwen/qwen3-32b
+LLM_FALLBACK_MODEL=qwen/qwen3.8-27b
 
 # ---- App ----
 SERVER_PORT=8080
@@ -310,7 +310,7 @@ recallx:
     base-url: ${LLM_BASE_URL:https://api.groq.com/openai/v1}
     api-key: ${LLM_API_KEY:}
     model: ${LLM_MODEL:openai/gpt-oss-120b}
-    fallback-model: ${LLM_FALLBACK_MODEL:qwen/qwen3-32b}
+    fallback-model: ${LLM_FALLBACK_MODEL:qwen/qwen3.8-27b}
 
 management:
   endpoints:

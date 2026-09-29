@@ -37,7 +37,7 @@ recallx:
     base-url: ${LLM_BASE_URL:https://api.groq.com/openai/v1}
     api-key: ${LLM_API_KEY:}
     model: ${LLM_MODEL:openai/gpt-oss-120b}
-    fallback-model: ${LLM_FALLBACK_MODEL:qwen/qwen3-32b}
+    fallback-model: ${LLM_FALLBACK_MODEL:qwen/qwen3.8-27b}
 
 management:
   endpoints:

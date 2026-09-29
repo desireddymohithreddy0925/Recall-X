@@ -42,10 +42,10 @@ class BaselineLlmClientTest {
                 .andExpect(jsonPath("$.model").value("openai/gpt-oss-120b"))
                 .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS));
         server.expect(requestTo("https://llm.test/v1/chat/completions"))
-                .andExpect(jsonPath("$.model").value("qwen/qwen3-32b"))
+                .andExpect(jsonPath("$.model").value("qwen/qwen3.8-27b"))
                 .andRespond(withSuccess(ANSWER, MediaType.APPLICATION_JSON));
 
-        assertThat(client.answer("Timeouts?").model()).isEqualTo("qwen/qwen3-32b");
+        assertThat(client.answer("Timeouts?").model()).isEqualTo("qwen/qwen3.8-27b");
         server.verify();
     }
 
@@ -54,10 +54,10 @@ class BaselineLlmClientTest {
         server.expect(requestTo("https://llm.test/v1/chat/completions"))
                 .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
         server.expect(requestTo("https://llm.test/v1/chat/completions"))
-                .andExpect(jsonPath("$.model").value("qwen/qwen3-32b"))
+                .andExpect(jsonPath("$.model").value("qwen/qwen3.8-27b"))
                 .andRespond(withSuccess(ANSWER, MediaType.APPLICATION_JSON));
 
-        assertThat(client.answer("Timeouts?").model()).isEqualTo("qwen/qwen3-32b");
+        assertThat(client.answer("Timeouts?").model()).isEqualTo("qwen/qwen3.8-27b");
         server.verify();
     }
 }
